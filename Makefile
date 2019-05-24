@@ -35,8 +35,8 @@ EMU_EXE = $(EXE).mwx
 #INPUT = tri-128-388-379.tsv
 #INPUT = tri-256-934-994.tsv
 #INPUT = tri-512-1737-1582.tsv
-INPUT = tri-1024-3631-3223.tsv
-#INPUT = tri-2048-7802-8116.tsv
+#INPUT = tri-1024-3631-3223.tsv
+INPUT = tri-2048-7802-8116.tsv
 #INPUT = triangle_count_data_ca-HepTh-9877-25973-28339.tsv
 
 $(EMU_EXE) : $(EMU_OBJS)
@@ -46,6 +46,7 @@ run : $(EMU_EXE)
 	$(EMU_SIM) $(EMU_SIM_ARGS) $(EMU_EXE) ./tris/$(INPUT)
 
 profile : $(EMU_EXE)
+	CORE_CLK_MHZ=175 \
 	$(EMU_PROFILE) profile $(EMU_SIM_ARGS) -- $(EMU_EXE) ./tris/$(INPUT)
 
 %.emu.o: %.cc $(HDRS)
