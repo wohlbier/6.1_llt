@@ -1,27 +1,3 @@
-/*
-  MM = MEMORY MAP
-  Memory Reference Map. Entry (i,j) is the number of references
-  made by threads on nodelet i to nodelet j. i == j for local references.
-  Sum of column j is number of references on nodelet j, excluding remotes.
-  Sum of row i, excluding i == j, is number of migrations away from nodelet i.
-
-  Each row in the memory map represents the source nodelet on which a memory
-  instruction was encountered and the column represents the destination nodelet
-  on which the memory instruction was ultimately executed. Values on the
-  diagonal represent local memory accesses and non-diagonal values show the
-  number of memory accesses that required a migration to another nodelet to
-  complete.
-
-  RM = REMOTES MAP
-  Remotes Reference Map. Counts number of remote operations from
-  threads on nodelet i to nodelet j.
-
-  Each row in the remotes map is a source nodelet and each column is a
-  destination nodelet for a remote memory operation. Note that the diagonal
-  values are always zero because a remote update to a local value will be
-  counted as a local memory operation. In this example, all the values are zero
-  showing that no remote memory operations occurred.
- */
 #include <assert.h>
 #include <iostream>
 #include <tuple>
@@ -29,18 +5,43 @@
 
 #include <cilk.h>
 #include <memoryweb.h>
+#include <distributed.h>
+extern "C" {
+#include <emu_c_utils/layout.h>
+#include <emu_c_utils/hooks.h>
+}
 
 #include "algebra.hh"
 #include "types.hh"
 
+void build(prMatrix_t L, prIndexArray_t riL, prIndexArray_t rjL)
+{
+    // create lists specific to this nodelet
+    IndexArray_t iL, jL;
+    Index_t nedgesL = 0;
+
+    // loop over all edges and pick i nodes that will reside on this
+    // nodelet.
+    for (Index_t e = 0; e < riL->n(); e++)
+    {
+        Index_t i = riL->data(NODE_ID())[e];
+        Index_t j = rjL->data(NODE_ID())[e];
+        if (n_map(i) == NODE_ID())
+        {
+            iL.push_back(i);
+            jL.push_back(j);
+            ++nedgesL;
+        }
+    }
+    IndexArray_t v(iL.size(), 1);
+    L->build(iL.begin(), jL.begin(), v.begin(), nedgesL);
+}
 
 int main(int argc, char* argv[])
 {
-    IndexArray_t iL, iU, iA;
-    IndexArray_t jL, jU, jA;
+    IndexArray_t iL;
+    IndexArray_t jL;
     Index_t nedgesL = 0;
-    Index_t nedgesU = 0;
-    Index_t nedgesA = 0;
     Index_t max_id = 0;
     Index_t src, dst;
 
@@ -51,52 +52,63 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
+    // read edges in lower triangle of adjacency matrix
     while (!feof(infile))
     {
         fscanf(infile, "%ld %ld\n", &src, &dst);
         if (src > max_id) max_id = src;
         if (dst > max_id) max_id = dst;
 
-        if (src < dst)
+        if (dst < src)
         {
-            iA.push_back(src);
-            jA.push_back(dst);
-
-            iU.push_back(src);
-            jU.push_back(dst);
-
-            ++nedgesU;
-        }
-        else if (dst < src)
-        {
-            iA.push_back(src);
-            jA.push_back(dst);
-
             iL.push_back(src);
             jL.push_back(dst);
-
             ++nedgesL;
         }
-        ++nedgesA;
     }
     fclose(infile);
 
-    std::cout << "Read " << nedgesL << " edges in L." << std::endl;
     Index_t nnodes = max_id + 1;
-    std::cout << "#Nodes = " << nnodes << std::endl;
-    IndexArray_t v(iL.size(), 1); // matrix values of 1
+    std::cerr << "num nodes: " << nnodes << std::endl;
+    std::cerr << "num edges: " << nedgesL << std::endl;
 
-    starttiming();
+    hooks_region_begin("6.1_llt");
 
-    Matrix_t * L = Matrix_t::create(nnodes);
-    L->build(iL.begin(), jL.begin(), v.begin(), nedgesL);
+    prIndexArray_t riL = rIndexArray_t::create(nedgesL);
+    prIndexArray_t rjL = rIndexArray_t::create(nedgesL);
 
-    Matrix_t * C = Matrix_t::create(nnodes);
-    ABT_Mask_NoAccum_kernel(C, L, L, L);
+    // deep copy iL, jL into riL, rjL. each nodelet has entire edge list.
+    for (Index_t i = 0; i < NODELETS(); ++i)
+    {
+        memcpy(riL->data(i), iL.data(), iL.size() * sizeof(Index_t));
+        memcpy(rjL->data(i), jL.data(), jL.size() * sizeof(Index_t));
+    }
+
+    prMatrix_t L = rMatrix_t::create(nnodes);
+
+    // spawn build functions on each nodelet
+    for (Index_t i = 0; i < NODELETS(); ++i)
+    {
+        cilk_migrate_hint(riL->data(i));
+        cilk_spawn build(L, riL, rjL);
+    }
+    cilk_sync;
+
+    rMatrix_t * C = rMatrix_t::create(nnodes);
+
+    // solve L * L^T using ABT kernel
+    for (Index_t i = 0; i < NODELETS(); ++i)
+    {
+        cilk_migrate_hint(L->row_addr(i));
+        cilk_spawn ABT_Mask_NoAccum_kernel(C, L, L, L);
+    }
+    cilk_sync;
 
     // reduce
     Scalar_t nTri = reduce(C);
     std::cerr << "nTri: " << nTri << std::endl;
+
+    hooks_region_end();
 
     return 0;
 }
