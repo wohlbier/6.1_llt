@@ -9,11 +9,13 @@ EMU_CXX = $(EMU_PATH)/bin/emu-cc
 EMU_SIM = $(EMU_PATH)/bin/emusim.x
 
 EMU_SIM_ARGS =
-EMU_SIM_ARGS += --short_trace
+#EMU_SIM_ARGS += --short_trace
 #EMU_SIM_ARGS += --memory_trace
 
 EMU_PROFILE = $(EMU_PATH)/bin/emusim_profile
 
+CPPFLAGS =
+CPPFLAGS += -D__PROFILE__
 LDFLAGS = -lemu_c_utils
 
 EXE  = llt
@@ -27,12 +29,15 @@ EMU_EXE = $(EXE).mwx
 #INPUT = tri-16-25-2.tsv
 #INPUT = tri-16-26-4.tsv
 #INPUT = tri-16-28-8.tsv
+#INPUT = tri-19-34-9.tsv
 #INPUT = tri-32-78-63.tsv
 #INPUT = tri-64-191-184.tsv
 #INPUT = tri-128-388-379.tsv
 #INPUT = tri-256-934-994.tsv
-INPUT = tri-512-1737-1582.tsv
-#INPUT = triangle_count_data_ca-HepTh.tsv
+#INPUT = tri-512-1737-1582.tsv
+INPUT = tri-1024-3631-3223.tsv
+#INPUT = tri-2048-7802-8116.tsv
+#INPUT = triangle_count_data_ca-HepTh-9877-25973-28339.tsv
 
 $(EMU_EXE) : $(EMU_OBJS)
 	$(EMU_CXX) -o $(EMU_EXE) $(EMU_OBJS) $(LDFLAGS)

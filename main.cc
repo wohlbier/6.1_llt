@@ -72,7 +72,9 @@ int main(int argc, char* argv[])
     std::cerr << "num nodes: " << nnodes << std::endl;
     std::cerr << "num edges: " << nedgesL << std::endl;
 
+#ifdef __PROFILE__
     hooks_region_begin("6.1_llt");
+#endif
 
     prIndexArray_t riL = rIndexArray_t::create(nedgesL);
     prIndexArray_t rjL = rIndexArray_t::create(nedgesL);
@@ -94,6 +96,10 @@ int main(int argc, char* argv[])
     }
     cilk_sync;
 
+    // clean up auxilliary arrays
+    delete riL;
+    delete rjL;
+
     rMatrix_t * C = rMatrix_t::create(nnodes);
 
     // solve L * L^T using ABT kernel
@@ -108,7 +114,13 @@ int main(int argc, char* argv[])
     Scalar_t nTri = reduce(C);
     std::cerr << "nTri: " << nTri << std::endl;
 
+    // clean up matrices
+    delete L;
+    delete C;
+
+#ifdef __PROFILE__
     hooks_region_end();
+#endif
 
     return 0;
 }
