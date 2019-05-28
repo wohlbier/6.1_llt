@@ -39,6 +39,10 @@ void build(prMatrix_t L, prIndexArray_t riL, prIndexArray_t rjL)
 
 int main(int argc, char* argv[])
 {
+#ifdef __PROFILE__
+    hooks_region_begin("6.1_llt");
+#endif
+
     IndexArray_t iL;
     IndexArray_t jL;
     Index_t nedgesL = 0;
@@ -71,10 +75,6 @@ int main(int argc, char* argv[])
     Index_t nnodes = max_id + 1;
     std::cerr << "num nodes: " << nnodes << std::endl;
     std::cerr << "num edges: " << nedgesL << std::endl;
-
-#ifdef __PROFILE__
-    hooks_region_begin("6.1_llt");
-#endif
 
     prIndexArray_t riL = rIndexArray_t::create(nedgesL);
     prIndexArray_t rjL = rIndexArray_t::create(nedgesL);

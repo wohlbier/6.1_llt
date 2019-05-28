@@ -80,6 +80,23 @@ void row_kernel(Index_t irow,
 }
 
 static inline
+void multi_row_kernel(Index_t i,
+                      Index_t nrow,
+                      prMatrix_t C,
+                      prMatrix_t const M,
+                      prMatrix_t const A,
+                      prMatrix_t const B)
+{
+    for (Index_t j = i*nrow; j < (i+1)*nrow; ++j)
+    {
+        // absolute row index
+        Index_t irow = nr_inv(NODE_ID(), j);
+        row_kernel(irow, C, M, A, B);
+    }
+
+}
+
+static inline
 void ABT_Mask_NoAccum_kernel(
     prMatrix_t C,               // output matrix
     prMatrix_t const M,         // mask matrix
@@ -90,15 +107,42 @@ void ABT_Mask_NoAccum_kernel(
 {
     // making use of the fact we know that B equals L^T
 
+    // compute rows per thread
+    Index_t nrows_per_thread = A->nrows_nl() / THREADS_PER_NODELET;
+    // if nrows_nl < THREADS_PER_NODELET, all rows are remainder rows
+    Index_t nremainder_rows = A->nrows_nl() % THREADS_PER_NODELET;
+
+    // spawn THREADS_PER_NODELET threads
+    if (nrows_per_thread)
+    {
+        for (Index_t i = 0; i < THREADS_PER_NODELET; ++i)
+        {
+            cilk_spawn multi_row_kernel(i, nrows_per_thread, C, M, A, B);
+        }
+        cilk_sync;
+    }
+
+    // spawn nremainder_rows threads
+    if (nremainder_rows)
+    {
+        Index_t offset = nrows_per_thread * THREADS_PER_NODELET;
+        for (Index_t i = 0; i < nremainder_rows; ++i)
+        {
+            // absolute row index
+            Index_t irow = nr_inv(NODE_ID(), i + offset);
+            cilk_spawn row_kernel(irow, C, M, A, B);
+        }
+        cilk_sync;
+    }
+
+
     // spawn a thread for each row that the nodelet owns
     // spawn it locally, so no migrate hint
-    for (Index_t i = 0; i < A->nrows_nl(); ++i)
-    {
-        // absolute row index
-        Index_t irow = nr_inv(NODE_ID(), i);
-        cilk_spawn row_kernel(irow, C, M, A, B);
-    }
-    cilk_sync;
+//    for (Index_t i = 0; i < A->nrows_nl(); ++i)
+//    {
+//        Index_t irow = nr_inv(NODE_ID(), i);
+//    }
+//    cilk_sync;
 }
 
 Scalar_t reduce(prMatrix_t A)

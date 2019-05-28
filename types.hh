@@ -1,6 +1,10 @@
 #ifndef TYPES_HH
 #define TYPES_HH
 
+#ifndef THREADS_PER_NODELET
+#define THREADS_PER_NODELET 64
+#endif
+
 typedef long Index_t;
 typedef long Scalar_t;
 typedef Index_t * pIndex_t;
@@ -117,7 +121,9 @@ public:
 private:
     rMatrix_t(Index_t nrows) : nrows_(nrows)
     {
-        nrows_per_nodelet_ = r_map(nrows_) + n_map(nrows_);
+        nrows_per_nodelet_ = r_map(nrows_);
+        if (n_map(nrows_) != 0) nrows_per_nodelet_++; // add empty rows
+
         rows_ = (ppRow_t)mw_malloc2d(NODELETS(),
                                      nrows_per_nodelet_ * sizeof(Row_t));
 
