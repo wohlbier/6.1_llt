@@ -1,4 +1,4 @@
-HDRS = algebra.hh types.hh utils.hh
+HDRS = algebra.hh types.hh
 SRCS = main.cc
 EMU_OBJS = $(subst .cc,.emu.o,$(SRCS))
 
@@ -34,11 +34,11 @@ EMU_EXE = $(EXE).mwx
 #INPUT = tri-64-191-184.tsv
 #INPUT = tri-128-388-379.tsv
 #INPUT = tri-256-934-994.tsv
-INPUT = tri-512-1737-1582.tsv
+INPUT = tri-512-1737-1582.bin
 #INPUT = tri-1021-3606-3190.tsv
 #INPUT = tri-1024-3631-3223.tsv
 #INPUT = tri-2048-7802-8116.tsv
-#INPUT = triangle_count_data_ca-HepTh-9877-25973-28339.tsv
+INPUT = triangle_count_data_ca-HepTh-9877-25973-28339.bin
 
 $(EMU_EXE) : $(EMU_OBJS)
 	$(EMU_CXX) -o $(EMU_EXE) $(EMU_OBJS) $(LDFLAGS)
@@ -50,6 +50,9 @@ profile : $(EMU_EXE)
 	CORE_CLK_MHZ=175 \
 	$(EMU_PROFILE) profile $(EMU_SIM_ARGS) -- $(EMU_EXE) ./tris/$(INPUT)
 
+convert : convert.cc
+	$(CXX) -o convert convert.cc
+
 %.emu.o: %.cc $(HDRS)
 	$(EMU_CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
@@ -58,3 +61,4 @@ profile : $(EMU_EXE)
 clean :
 	-$(RM) *~ $(OBJS) $(EMU_OBJS) $(EXE) $(EMU_EXE) *.cdc *.hdd *.vsf
 	-$(RM) -r profile $(EXE).txt
+	-$(RM) -r convert

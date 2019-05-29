@@ -5,10 +5,13 @@
 #define THREADS_PER_NODELET 64
 #endif
 
+#include <tuple>
+#include <vector>
+
+#include <cilk.h>
+
 typedef long Index_t;
 typedef long Scalar_t;
-typedef Index_t * pIndex_t;
-typedef pIndex_t * ppIndex_t;
 typedef std::vector<Index_t> IndexArray_t;
 typedef std::vector<std::tuple<Index_t, Scalar_t>> Row_t;
 typedef Row_t * pRow_t;
@@ -43,40 +46,6 @@ public:
         mw_free(ptr);
     }
 };
-
-// replicated IndexArray_t
-class rIndexArray_t : public repl_new
-{
-public:
-    static rIndexArray_t * create(Index_t n)
-    {
-        return new rIndexArray_t(n);
-    }
-
-    rIndexArray_t() = delete;
-    rIndexArray_t(const rIndexArray_t &) = delete;
-    rIndexArray_t & operator=(const rIndexArray_t &) = delete;
-    rIndexArray_t(rIndexArray_t &&) = delete;
-    rIndexArray_t & operator=(rIndexArray_t &&) = delete;
-
-    Index_t n() { return n_; }
-    pIndex_t data(Index_t i) { return data_[i]; }
-private:
-    rIndexArray_t(Index_t n) : n_(n)
-    {
-        data_ = (ppIndex_t)mw_malloc2d(NODELETS(),
-                                       n_ * sizeof(Index_t));
-
-        // replicate the class across nodelets
-        for (Index_t i = 1; i < NODELETS(); ++i)
-        {
-            memcpy(mw_get_nth(this, i), mw_get_nth(this, 0), sizeof(*this));
-        }
-    }
-    Index_t n_;
-    ppIndex_t data_;
-};
-typedef rIndexArray_t * prIndexArray_t;
 
 class rMatrix_t : public repl_new
 {
