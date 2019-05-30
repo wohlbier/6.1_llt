@@ -84,7 +84,7 @@ public:
 
     Index_t * row_addr(Index_t i)
     {
-        return (Index_t *)(rows_ + i);
+        return (Index_t *)(rows_ + n_map(i));
     }
 
 private:
