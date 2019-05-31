@@ -108,14 +108,15 @@ void ABT_Mask_NoAccum_kernel(
     // making use of the fact we know that B equals L^T
 
     // compute rows per thread
-    Index_t nrows_per_thread = A->nrows_nl() / THREADS_PER_NODELET;
-    // if nrows_nl < THREADS_PER_NODELET, all rows are remainder rows
-    Index_t nremainder_rows = A->nrows_nl() % THREADS_PER_NODELET;
+    Index_t threads_per_nodelet = THREADS_PER_GC * GC_PER_NODELET;
+    Index_t nrows_per_thread = A->nrows_nl() / threads_per_nodelet;
+    // if nrows_nl < threads_per_nodelet, all rows are remainder rows
+    Index_t nremainder_rows = A->nrows_nl() % threads_per_nodelet;
 
-    // spawn THREADS_PER_NODELET threads
+    // spawn threads_per_nodelet threads
     if (nrows_per_thread)
     {
-        for (Index_t i = 0; i < THREADS_PER_NODELET; ++i)
+        for (Index_t i = 0; i < threads_per_nodelet; ++i)
         {
             cilk_spawn multi_row_kernel(i, nrows_per_thread, C, M, A, B);
         }
@@ -125,7 +126,7 @@ void ABT_Mask_NoAccum_kernel(
     // spawn nremainder_rows threads
     if (nremainder_rows)
     {
-        Index_t offset = nrows_per_thread * THREADS_PER_NODELET;
+        Index_t offset = nrows_per_thread * threads_per_nodelet;
         for (Index_t i = 0; i < nremainder_rows; ++i)
         {
             // absolute row index
@@ -134,15 +135,6 @@ void ABT_Mask_NoAccum_kernel(
         }
         cilk_sync;
     }
-
-
-    // spawn a thread for each row that the nodelet owns
-    // spawn it locally, so no migrate hint
-//    for (Index_t i = 0; i < A->nrows_nl(); ++i)
-//    {
-//        Index_t irow = nr_inv(NODE_ID(), i);
-//    }
-//    cilk_sync;
 }
 
 Scalar_t reduce(prMatrix_t A)

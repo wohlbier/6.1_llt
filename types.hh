@@ -1,8 +1,11 @@
 #ifndef TYPES_HH
 #define TYPES_HH
 
-#ifndef THREADS_PER_NODELET
-#define THREADS_PER_NODELET 64
+#ifndef THREADS_PER_GC
+#define THREADS_PER_GC 64
+#endif
+#ifndef GC_PER_NODELET
+#define GC_PER_NODELET 4
 #endif
 
 #include <tuple>
