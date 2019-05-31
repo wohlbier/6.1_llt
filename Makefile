@@ -11,6 +11,7 @@ EMU_SIM = $(EMU_PATH)/bin/emusim.x
 EMU_SIM_ARGS =
 #EMU_SIM_ARGS += --short_trace
 #EMU_SIM_ARGS += --memory_trace
+EMU_SIM_ARGS += --log2_nodelet_memory 34 --core_clk_mhz 175 --log2_nodelets_per_node 2 --gcs_per_nodelet 3 --ddr_speed 2
 
 EMU_PROFILE = $(EMU_PATH)/bin/emusim_profile
 
@@ -47,7 +48,6 @@ run : $(EMU_EXE)
 	$(EMU_SIM) $(EMU_SIM_ARGS) $(EMU_EXE) ./tris/$(INPUT)
 
 profile : $(EMU_EXE)
-	CORE_CLK_MHZ=175 \
 	$(EMU_PROFILE) profile $(EMU_SIM_ARGS) -- $(EMU_EXE) ./tris/$(INPUT)
 
 convert : convert.cc

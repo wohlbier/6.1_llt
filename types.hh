@@ -5,7 +5,7 @@
 #define THREADS_PER_GC 64
 #endif
 #ifndef GC_PER_NODELET
-#define GC_PER_NODELET 4
+#define GC_PER_NODELET 3
 #endif
 
 #include <tuple>
