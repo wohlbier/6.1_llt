@@ -115,7 +115,7 @@ private:
 
     void allocateRows(Index_t i)
     {
-        for (Index_t row_idx= 0; row_idx < nrows_per_nodelet_; ++row_idx)
+        for (Index_t row_idx = 0; row_idx < nrows_per_nodelet_; ++row_idx)
         {
             new(rows_[i] + row_idx) Row_t();
         }

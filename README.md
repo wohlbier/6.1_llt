@@ -80,9 +80,52 @@ Compute maximum possible bandwidths per nodelet
 - NQM
 - ME
 
+Items
+- Compute avg, max degree for use of prefetching
+
 Memory DDR4-1600: Bandwidth = 1.416 GiB/s = 1.521 GB/s
 SRIO SystemIC bandwidth     = 2.320 GiB/s = 2.500 GB/s
 
 Total threads: 64 x 3 x 4 x 8 = 6048
 Profile shows initial jump to near 5000, but then dials back to ~1000. Why
 is there a limit on active threads?
+
+cdc file reports max live threads 6145
+
+Num_Core_Cycles=339622400
+Num_SRIO_Cycles=1212876496
+Num_Mem_Cycles =368935816
+
+Eric, the cdc file reports
+Memory DDR4-1600: Bandwidth = 1.416 GiB/s = 1.521 GB/s
+I take it that this is per memory channel, and there is one channel per
+nodelet. (Since 1.5GB/s / 1.6 GHz is about 1 byte per cycle, or 8 bits per
+cycle, which I read is the channel width of the NCDRAM.) So for an entire
+chick box there would be 32 times this for theoretical bandwidth. Is that
+correct?
+
+Eric Hein 3:10 PM
+actually 64x, but everything else you said is correct. There are 8 channels
+per node board. In the 1GCx8nlet version of the firmware, there is 1 memory
+channel per nodelet. In the 3GC x 4nlet version, we end up with 2 memory
+channels per nodelet.
+
+Eric Hein 3:16 PM
+Several factors currently limit us from reaching this theoretical bandwidth.
+The low clock rate makes most programs compute bound, since 8 bytes per cycle
+@ 175 MHz can't keep up with 1 byte per cycle at 1600 MHz even if every
+instruction is a load. Of course, not every instruction will be a load,
+especially with our simplistic ISA. Also there are known inefficiencies in
+the current memory controller design that we are trying to improve.
+
+Me:
+Cool. I suppose I'm thinking of the 3GC x 4nlet version since that is what
+LPS has. Understood about the differences in clock rates and being compute
+bound. For the system interconnect is the 2.5 GB/s per link? I read somewhere
+that a nodelet is linked to 6 other nodelets.
+
+Eric Hein 3:34 PM
+I think so. Network BW never seems to be the bottleneck at this stage; even
+when there are lots of migrations it's more about waiting for threads to get
+moved in/out of the GC's than about how much data need to move between
+nodelets.
