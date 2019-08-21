@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <cilk.h>
+#include <reducer.h>
 
 typedef long Index_t;
 typedef long Scalar_t;
@@ -74,6 +75,27 @@ public:
             setElement(*i_it, *j_it, *v_it);
             ++i_it; ++j_it; ++v_it; // increment iterators
         }
+
+        // count max degree
+        max_degree_ = 0;
+        for (Index_t row_idx = 0; row_idx < nrows_per_nodelet_; ++row_idx)
+        {
+            Index_t irow = nr_inv(NODE_ID(), row_idx); // absolute row index
+            pRow_t r = getrow(irow);
+            Index_t deg = r->size();
+            max_degree_ = (deg > max_degree_) ? deg : max_degree_;
+        }
+    }
+
+    void set_max_degree()
+    {
+        Index_t max = 0;
+        for (Index_t i = 0; i < NODELETS(); ++i)
+        {
+            Index_t lmax = *(Index_t*)mw_get_nth(&this->max_degree_, i);
+            max = (lmax > max) ? lmax : max;
+        }
+        mw_replicated_init(&this->max_degree_, max);
     }
 
     Index_t nrows() { return nrows_; }
@@ -89,6 +111,8 @@ public:
     {
         return (Index_t *)(rows_ + n_map(i));
     }
+
+    Index_t max_degree() { return max_degree_; }
 
 private:
     rMatrix_t(Index_t nrows) : nrows_(nrows)
@@ -150,6 +174,7 @@ private:
     Index_t nrows_;
     Index_t nrows_per_nodelet_;
     ppRow_t rows_;
+    Index_t max_degree_;
 };
 typedef rMatrix_t * prMatrix_t;
 

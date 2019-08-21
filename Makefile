@@ -44,8 +44,8 @@ EMU_EXE = $(EXE).mwx
 #INPUT = tri-512-1737-1582.bin
 #INPUT = tri-1021-3606-3190.bin
 #INPUT = tri-1024-3631-3223.bin
-#INPUT = tri-2048-7802-8116.bin
-INPUT = triangle_count_data_ca-HepTh-9877-25973-28339.bin
+INPUT = tri-2048-7802-8116.bin
+#INPUT = triangle_count_data_ca-HepTh-9877-25973-28339.bin
 
 $(EMU_EXE) : $(EMU_OBJS)
 	$(EMU_CXX) -o $(EMU_EXE) $(EMU_OBJS) $(LDFLAGS)

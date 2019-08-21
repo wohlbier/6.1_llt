@@ -89,8 +89,10 @@ int main(int argc, char* argv[])
         cilk_spawn initialize(filename, L, nnodes, nedges);
     }
     cilk_sync;
+    L->set_max_degree();
 
     std::cerr << "Initialization complete." << std::endl;
+    std::cerr << "Max degree: " << L->max_degree() << std::endl;
 
     rMatrix_t * C = rMatrix_t::create(nnodes);
 
