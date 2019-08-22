@@ -1,6 +1,9 @@
 #ifndef TYPES_HH
 #define TYPES_HH
 
+#ifndef THREAD_OVERSUBSCRIBE
+#define THREAD_OVERSUBSCRIBE 1
+#endif
 #ifndef THREADS_PER_GC
 #define THREADS_PER_GC 64
 #endif

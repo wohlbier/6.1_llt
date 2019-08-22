@@ -42,6 +42,15 @@ int main(int argc, char* argv[])
             jL.push_back(dst);
             ++nedgesL;
         }
+#if 1
+        // if we know the graph doesn't have dupes and is not necessarily
+        // lower triangular.
+        else {
+            iL.push_back(dst);
+            jL.push_back(src);
+            ++nedgesL;
+        }
+#endif
     }
     fclose(infile);
 

@@ -53,6 +53,14 @@ bool dot(Scalar_t & ans, pRow_t a, pRow_t b) // no semiring
 }
 
 static inline
+void copy_remote_row(pRow_t src, Row_t & dest)
+{
+    Index_t sz = src->size(); // migrate to get size
+    dest.resize(sz);          // migrate back to resize and copy
+    memcpy(dest.data(), src->data(), sz*sizeof(std::tuple<Index_t, Scalar_t>));
+}
+
+static inline
 void row_kernel(Index_t irow,
                 prMatrix_t C,
                 prMatrix_t const M,
@@ -70,9 +78,13 @@ void row_kernel(Index_t irow,
         // apply mask
         if (!index_exists(M->getrow(irow), icol)) continue;
 
+        // copy the remote row into r
+        Row_t r;
+        copy_remote_row(B->getrow(icol), r);
+
         // compute the dot
         Scalar_t ans;
-        if (dot(ans, A->getrow(irow), B->getrow(icol)))
+        if (dot(ans, A->getrow(irow), &r))
         {
             C->getrow(irow)->push_back(std::make_tuple(icol, ans));
         }
@@ -80,14 +92,14 @@ void row_kernel(Index_t irow,
 }
 
 static inline
-void multi_row_kernel(Index_t i,
+void multi_row_kernel(Index_t t,
                       Index_t nrow,
                       prMatrix_t C,
                       prMatrix_t const M,
                       prMatrix_t const A,
                       prMatrix_t const B)
 {
-    for (Index_t j = i*nrow; j < (i+1)*nrow; ++j)
+    for (Index_t j = t*nrow; j < (t+1)*nrow; ++j)
     {
         // absolute row index
         Index_t irow = nr_inv(NODE_ID(), j);
@@ -108,7 +120,8 @@ void ABT_Mask_NoAccum_kernel(
     // making use of the fact we know that B equals L^T
 
     // compute rows per thread
-    Index_t threads_per_nodelet = THREADS_PER_GC * GC_PER_NODELET;
+    Index_t threads_per_nodelet =
+        THREAD_OVERSUBSCRIBE * THREADS_PER_GC * GC_PER_NODELET;
     Index_t nrows_per_thread = A->nrows_nl() / threads_per_nodelet;
     // if nrows_nl < threads_per_nodelet, all rows are remainder rows
     Index_t nremainder_rows = A->nrows_nl() % threads_per_nodelet;
@@ -116,9 +129,9 @@ void ABT_Mask_NoAccum_kernel(
     // spawn threads_per_nodelet threads
     if (nrows_per_thread)
     {
-        for (Index_t i = 0; i < threads_per_nodelet; ++i)
+        for (Index_t t = 0; t < threads_per_nodelet; ++t)
         {
-            cilk_spawn multi_row_kernel(i, nrows_per_thread, C, M, A, B);
+            cilk_spawn multi_row_kernel(t, nrows_per_thread, C, M, A, B);
         }
         cilk_sync;
     }
@@ -127,10 +140,10 @@ void ABT_Mask_NoAccum_kernel(
     if (nremainder_rows)
     {
         Index_t offset = nrows_per_thread * threads_per_nodelet;
-        for (Index_t i = 0; i < nremainder_rows; ++i)
+        for (Index_t t = 0; t < nremainder_rows; ++t)
         {
             // absolute row index
-            Index_t irow = nr_inv(NODE_ID(), i + offset);
+            Index_t irow = nr_inv(NODE_ID(), t + offset);
             cilk_spawn row_kernel(irow, C, M, A, B);
         }
         cilk_sync;
