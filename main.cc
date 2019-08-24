@@ -105,6 +105,7 @@ int main(int argc, char* argv[])
     cilk_sync;
 
     // reduce
+    std::cerr << "Start reduction." << std::endl;
     Scalar_t nTri = reduce(C);
     std::cerr << "nTri: " << nTri << std::endl;
 

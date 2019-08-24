@@ -22,7 +22,7 @@ EMU_SIM_ARGS += --capture_timing_queues
 EMU_PROFILE = $(EMU_PATH)/bin/emusim_profile
 
 CPPFLAGS =
-CPPFLAGS += -D__PROFILE__
+#CPPFLAGS += -D__PROFILE__
 LDFLAGS = -lemu_c_utils
 
 EXE  = llt
@@ -45,8 +45,9 @@ EMU_EXE = $(EXE).mwx
 #INPUT = tri-1021-3606-3190.bin
 #INPUT = tri-1024-3631-3223.bin
 #INPUT = tri-2048-7802-8116.bin
-#INPUT = triangle_count_data_ca-HepTh-9877-25973-28339.bin
-INPUT = 0.57-0.19-0.19-0.05-1K-1K.rmat.bin
+INPUT = triangle_count_data_ca-HepTh-9877-25973-28339.bin
+#INPUT = 0.57-0.19-0.19-0.05-1K-1K.rmat.bin
+#INPUT = 0.57-0.19-0.19-0.05-10K-10K.rmat.bin
 
 $(EMU_EXE) : $(EMU_OBJS)
 	$(EMU_CXX) -o $(EMU_EXE) $(EMU_OBJS) $(LDFLAGS)
