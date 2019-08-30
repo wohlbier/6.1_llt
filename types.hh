@@ -10,6 +10,8 @@
 #ifndef GC_PER_NODELET
 #define GC_PER_NODELET 3
 #endif
+#define THREADS_PER_NODELET \
+    THREAD_OVERSUBSCRIBE * THREADS_PER_GC * GC_PER_NODELET
 
 #include <tuple>
 #include <vector>

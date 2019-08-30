@@ -94,13 +94,17 @@ int main(int argc, char* argv[])
     std::cerr << "Initialization complete." << std::endl;
     std::cerr << "Max degree: " << L->max_degree() << std::endl;
 
-    rMatrix_t * C = rMatrix_t::create(nnodes);
+    // answer matrix
+    prMatrix_t C = rMatrix_t::create(nnodes);
+    // scratch matrix
+    prMatrix_t S = rMatrix_t::create(nnodes);
+    //prMatrix_t S = rMatrix_t::create(THREADS_PER_NODELET * NODELETS());
 
     // solve L * L^T using ABT kernel
     for (Index_t i = 0; i < NODELETS(); ++i)
     {
         cilk_migrate_hint(L->row_addr(i));
-        cilk_spawn ABT_Mask_NoAccum_kernel(C, L, L, L);
+        cilk_spawn ABT_Mask_NoAccum_kernel(C, L, L, L, S);
     }
     cilk_sync;
 
@@ -112,6 +116,7 @@ int main(int argc, char* argv[])
     // clean up matrices
     delete L;
     delete C;
+    delete S;
 
 #ifdef __PROFILE__
     hooks_region_end();
