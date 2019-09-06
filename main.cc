@@ -59,9 +59,9 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-#ifdef __PROFILE__
-    hooks_region_begin("6.1_llt");
-#endif
+//#ifdef __PROFILE__
+//    hooks_region_begin("6.1_llt");
+//#endif
 
     Index_t nnodes, nedges;
     std::string filename = std::string(argv[1]);
@@ -100,6 +100,9 @@ int main(int argc, char* argv[])
     prMatrix_t S = rMatrix_t::create(nnodes);
     //prMatrix_t S = rMatrix_t::create(THREADS_PER_NODELET * NODELETS());
 
+#ifdef __PROFILE__
+    hooks_region_begin("6.1_llt");
+#endif
     // solve L * L^T using ABT kernel
     for (Index_t i = 0; i < NODELETS(); ++i)
     {

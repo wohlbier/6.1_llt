@@ -67,10 +67,12 @@ void row_kernel(Index_t irow,
     // that was the allocation size of S. Not ideal in using external
     // (to this function) data, but it is a global that is used in the
     // original definition.
-    pRow_t s = S->getrow(irow);// % THREADS_PER_NODELET);
+    pRow_t s = S->getrow(irow);
+    //pRow_t s = S->getrow(irow % (THREADS_PER_NODELET * NODELETS()));
 
     // loop over columns
     for (Index_t icol = 0; icol < A->nrows(); ++icol)
+    //for (Index_t icol = 58; icol < 59; ++icol)
     {
         // continue for empty column of B
         if (!B->getrow(icol)) continue;
@@ -82,10 +84,12 @@ void row_kernel(Index_t irow,
         // migrate to get the size of b
         Index_t bsz = b->size();
         // migrate back to resize s
-        s->resize(bsz);
+        s->resize(bsz); // causes two migrations between 4 <=> 2
         // copy b into s, then send s into dot
-        memcpy(s->data(), b->data(),
+        memcpy(s->data(), b->data(), // causes two migrations between 4 <=> 2
                bsz*sizeof(std::tuple<Index_t, Scalar_t>));
+
+        //continue;
 
         // compute the dot
         Scalar_t ans;
@@ -146,13 +150,17 @@ void ABT_Mask_NoAccum_kernel(
     if (nremainder_rows)
     {
         Index_t offset = nrows_per_thread * threads_per_nodelet;
+
+        //if (NODE_ID() == 4) { // use with tri-1024
         for (Index_t t = 0; t < nremainder_rows; ++t)
+        //for (Index_t t = 15; t < 16; ++t)
         {
             // absolute row index
             Index_t irow = nr_inv(NODE_ID(), t + offset);
             cilk_spawn row_kernel(irow, C, M, A, B, S);
         }
         cilk_sync;
+        //}
     }
 }
 
