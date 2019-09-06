@@ -22,7 +22,7 @@ EMU_SIM_ARGS += --capture_timing_queues
 EMU_PROFILE = $(EMU_PATH)/bin/emusim_profile
 
 CPPFLAGS =
-#CPPFLAGS += -D__PROFILE__
+CPPFLAGS += -D__PROFILE__
 LDFLAGS = -lemu_c_utils
 
 EXE  = llt
