@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <cilk.h>
+#include <memoryweb.h>
 
 typedef long Index_t;
 typedef long Scalar_t;
