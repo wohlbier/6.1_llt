@@ -9,7 +9,7 @@ extern "C" {
 #include "algebra.hh"
 #include "types.hh"
 
-void initialize(std::string const & filename, prMatrix_t M,
+void initialize(Index_t nodelet_id, std::string const & filename, prMatrix_t M,
                 Index_t const nnodes, Index_t const nedges)
 {
     Index_t tmp;
@@ -37,7 +37,7 @@ void initialize(std::string const & filename, prMatrix_t M,
     {
         Index_t i = iL[e];
         Index_t j = jL[e];
-        if (n_map(i) == NODE_ID())
+        if (n_map(i) == nodelet_id)
         {
             iL_nl.push_back(i);
             jL_nl.push_back(j);
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
     for (Index_t i = 0; i < NODELETS(); ++i)
     {
         cilk_migrate_hint(L->row_addr(i));
-        cilk_spawn initialize(filename, L, nnodes, nedges);
+        cilk_spawn initialize(i, filename, L, nnodes, nedges);
     }
     cilk_sync;
     L->set_max_degree();

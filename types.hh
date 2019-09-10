@@ -161,7 +161,7 @@ private:
         else // insert into row
         {
             Row_t::iterator it = r->begin();
-            while (std::get<0>(*it) < icol and it != r->end())
+            while (it != r->end() and std::get<0>(*it) < icol)
             {
                 ++it;
             }
