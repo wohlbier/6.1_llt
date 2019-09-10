@@ -21,14 +21,15 @@ bool index_exists(pRow_t r, Index_t icol)
 }
 
 static inline
-bool dot(Scalar_t & ans, pRow_t a, pRow_t b) // no semiring
+bool dot(Scalar_t & ans, pRow_t a, pRow_t b, Index_t bsz) // no semiring
 {
     bool result = false;
     Row_t::iterator ait = a->begin();
     Row_t::iterator bit = b->begin();
+    Index_t bctr = 0;
 
     ans = 0;
-    while (ait != a->end() && bit != b->end())
+    while (ait != a->end() && bctr < bsz)
     {
         Index_t a_idx = std::get<0>(*ait);
         Index_t b_idx = std::get<0>(*bit);
@@ -38,7 +39,7 @@ bool dot(Scalar_t & ans, pRow_t a, pRow_t b) // no semiring
             ans += std::get<1>(*ait) * std::get<1>(*bit);
             result = true;
             ++ait;
-            ++bit;
+            ++bit; ++bctr;
         }
         else if (a_idx < b_idx)
         {
@@ -47,6 +48,7 @@ bool dot(Scalar_t & ans, pRow_t a, pRow_t b) // no semiring
         else
         {
             ++bit;
+            ++bctr;
         }
     }
     return result;
@@ -83,14 +85,14 @@ void row_kernel(Index_t irow,
         // migrate to get the size of b
         Index_t bsz = b->size();
         // migrate back to resize s
-        s->resize(bsz);
+        //s->resize(bsz);
         // copy b into s, then send s into dot
         memcpy(s->data(), b->data(),
                bsz*sizeof(std::tuple<Index_t, Scalar_t>));
 
         // compute the dot
         Scalar_t ans;
-        if (dot(ans, A->getrow(irow), s))
+        if (dot(ans, A->getrow(irow), s, bsz))
         {
             C->getrow(irow)->push_back(std::make_tuple(icol, ans));
         }

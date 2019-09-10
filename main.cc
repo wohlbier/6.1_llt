@@ -50,6 +50,16 @@ void initialize(std::string const & filename, prMatrix_t M,
     M->build(iL_nl.begin(), jL_nl.begin(), v_nl.begin(), nedges_nl);
 }
 
+void resize(prMatrix_t M, Index_t sz)
+{
+    for (Index_t i = 0; i < M->nrows_nl(); i++)
+    {
+        Index_t irow = nr_inv(NODE_ID(), i);
+        pRow_t r = M->getrow(irow);
+        r->resize(sz);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     if (argc != 2)
@@ -99,6 +109,15 @@ int main(int argc, char* argv[])
     // scratch matrix
     prMatrix_t S = rMatrix_t::create(nnodes);
     //prMatrix_t S = rMatrix_t::create(THREADS_PER_NODELET * NODELETS());
+
+    // resize rows of S to be of max degree.
+    for (Index_t i = 0; i < NODELETS(); ++i)
+    {
+        cilk_migrate_hint(S->row_addr(i));
+        cilk_spawn resize(S, L->max_degree());
+    }
+    cilk_sync;
+
 
 #ifdef __PROFILE__
     hooks_region_begin("6.1_llt");
