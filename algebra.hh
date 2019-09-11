@@ -21,7 +21,7 @@ bool index_exists(pRow_t r, Index_t icol)
 }
 
 static inline
-bool dot(Scalar_t & ans, pRow_t a, pRow_t b, Index_t bsz) // no semiring
+bool dot(Scalar_t & ans, pRow_t a, pRow_t b, Index_t bsz)
 {
     bool result = false;
     Row_t::iterator ait = a->begin();
@@ -39,7 +39,8 @@ bool dot(Scalar_t & ans, pRow_t a, pRow_t b, Index_t bsz) // no semiring
             ans += std::get<1>(*ait) * std::get<1>(*bit);
             result = true;
             ++ait;
-            ++bit; ++bctr;
+            ++bit;
+            ++bctr;
         }
         else if (a_idx < b_idx)
         {
