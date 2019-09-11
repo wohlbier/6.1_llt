@@ -90,9 +90,12 @@ void row_kernel(Index_t irow,
 
         // compute the dot
         Scalar_t ans;
+        std::tuple<Index_t, Scalar_t> tmp;
         if (dot(ans, A->getrow(irow), s))
         {
-            C->getrow(irow)->push_back(std::make_tuple(icol, ans));
+            std::get<0>(tmp) = icol;
+            std::get<1>(tmp) = ans;
+            C->getrow(irow)->push_back(tmp);
         }
     }
 }

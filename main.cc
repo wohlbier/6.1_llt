@@ -15,17 +15,19 @@ void initialize(Index_t nl_id, std::string const & filename, prMatrix_t M,
     Index_t tmp;
     FILE *infile = mw_fopen(filename.c_str(), "r", &tmp);
     mw_fread(&tmp, sizeof(Index_t), 1, infile);
-    assert(tmp == nnodes); // needed with 19.09
+    //assert(tmp == nnodes); // needed with 19.09
     mw_fread(&tmp, sizeof(Index_t), 1, infile);
-    assert(tmp == nedges); // needed with 19.09
+    //assert(tmp == nedges); // needed with 19.09
 
     // thread local storage to read into
     IndexArray_t iL(nedges);
     IndexArray_t jL(nedges);
     mw_fread(reinterpret_cast<void *>(iL.data()),
-             sizeof(Index_t), iL.size(), infile);
+             //sizeof(Index_t), iL.size(), infile);
+             sizeof(Index_t)*iL.size(), 1, infile); // bug work around
     mw_fread(reinterpret_cast<void *>(jL.data()),
-             sizeof(Index_t), jL.size(), infile);
+             //sizeof(Index_t), jL.size(), infile);
+             sizeof(Index_t) * jL.size(), 1, infile); // bug work around
     mw_fclose(infile);
 
     // remove edges where i is a row not owned by this nodelet.
