@@ -57,18 +57,10 @@ void row_kernel(Index_t irow,
                 prMatrix_t C,
                 prMatrix_t const M,
                 prMatrix_t const A,
-                prMatrix_t const B,
-                prMatrix_t S)
+                prMatrix_t const B)
 {
     // return for empty row of A
     if (!A->getrow(irow)) return;
-
-    // scratch row for this irow. modded by THREADS_PER_NODELET since
-    // that was the allocation size of S. Not ideal in using external
-    // (to this function) data, but it is a global that is used in the
-    // original definition.
-    pRow_t s = S->getrow(irow);
-    //pRow_t s = S->getrow(irow % (THREADS_PER_NODELET * NODELETS()));
 
     // loop over columns
     for (Index_t icol = 0; icol < A->nrows(); ++icol)
@@ -78,20 +70,10 @@ void row_kernel(Index_t irow,
         // apply mask
         if (!index_exists(M->getrow(irow), icol)) continue;
 
-        // declare b as the off node column to dot with
-        pRow_t b = B->getrow(icol);
-        // migrate to get the size of b
-        Index_t bsz = b->size();
-        // migrate back to resize s
-        s->resize(bsz);
-        // copy b into s, then send s into dot
-        memcpy(s->data(), b->data(),
-               bsz*sizeof(std::tuple<Index_t, Scalar_t>));
-
         // compute the dot
         Scalar_t ans;
         std::tuple<Index_t, Scalar_t> tmp;
-        if (dot(ans, A->getrow(irow), s))
+        if (dot(ans, A->getrow(irow), B->getrow(icol)))
         {
             std::get<0>(tmp) = icol;
             std::get<1>(tmp) = ans;
@@ -107,14 +89,13 @@ void multi_row_kernel(Index_t nl_id,
                       prMatrix_t C,
                       prMatrix_t const M,
                       prMatrix_t const A,
-                      prMatrix_t const B,
-                      prMatrix_t S)
+                      prMatrix_t const B)
 {
     for (Index_t j = t*nrow; j < (t+1)*nrow; ++j)
     {
         // absolute row index
         Index_t irow = nr_inv(nl_id, j);
-        row_kernel(irow, C, M, A, B, S);
+        row_kernel(irow, C, M, A, B);
     }
 
 }
@@ -127,7 +108,6 @@ void ABT_Mask_NoAccum_kernel(
     // SemiringT,               // semiring
     prMatrix_t const A,         // Input matrix 1
     prMatrix_t const B,         // Input matrix 2
-    prMatrix_t S,               // scratch matrix
     bool replace_flag = false)  // put the answer in place?
 {
     // making use of the fact we know that B equals L^T
@@ -144,7 +124,7 @@ void ABT_Mask_NoAccum_kernel(
         for (Index_t t = 0; t < threads_per_nodelet; ++t)
         {
             cilk_spawn multi_row_kernel(nl_id, t, nrows_per_thread,
-                                        C, M, A, B, S);
+                                        C, M, A, B);
         }
         cilk_sync;
     }
@@ -158,7 +138,7 @@ void ABT_Mask_NoAccum_kernel(
         {
             // absolute row index
             Index_t irow = nr_inv(nl_id, t + offset);
-            cilk_spawn row_kernel(irow, C, M, A, B, S);
+            cilk_spawn row_kernel(irow, C, M, A, B);
         }
         cilk_sync;
     }

@@ -94,9 +94,6 @@ int main(int argc, char* argv[])
 
     // answer matrix
     prMatrix_t C = rMatrix_t::create(nnodes);
-    // scratch matrix
-    prMatrix_t S = rMatrix_t::create(nnodes);
-    //prMatrix_t S = rMatrix_t::create(THREADS_PER_NODELET * NODELETS());
 
 #ifdef __PROFILE__
     hooks_region_begin("6.1_llt");
@@ -105,7 +102,7 @@ int main(int argc, char* argv[])
     for (Index_t i = 0; i < NODELETS(); ++i)
     {
         cilk_migrate_hint(L->row_addr(i));
-        cilk_spawn ABT_Mask_NoAccum_kernel(i, C, L, L, L, S);
+        cilk_spawn ABT_Mask_NoAccum_kernel(i, C, L, L, L);
     }
     cilk_sync;
 
@@ -117,7 +114,6 @@ int main(int argc, char* argv[])
     // clean up matrices
     delete L;
     delete C;
-    delete S;
 
 #ifdef __PROFILE__
     hooks_region_end();
