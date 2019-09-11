@@ -24,10 +24,10 @@ void initialize(Index_t nl_id, std::string const & filename, prMatrix_t M,
     IndexArray_t jL(nedges);
     mw_fread(reinterpret_cast<void *>(iL.data()),
              //sizeof(Index_t), iL.size(), infile);
-             sizeof(Index_t)*iL.size(), 1, infile); // bug work around
+             1, sizeof(Index_t)*iL.size(), infile); // bug work around
     mw_fread(reinterpret_cast<void *>(jL.data()),
              //sizeof(Index_t), jL.size(), infile);
-             sizeof(Index_t) * jL.size(), 1, infile); // bug work around
+             1, sizeof(Index_t) * jL.size(), infile); // bug work around
     mw_fclose(infile);
 
     // remove edges where i is a row not owned by this nodelet.
