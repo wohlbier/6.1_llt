@@ -74,6 +74,7 @@ void row_kernel(Index_t irow,
     //pRow_t s = S->getrow(irow % (THREADS_PER_NODELET * NODELETS()));
 
     // loop over columns
+    std::tuple<Index_t, Scalar_t> tmp;
     for (Index_t icol = 0; icol < A->nrows(); ++icol)
     {
         // continue for empty column of B
