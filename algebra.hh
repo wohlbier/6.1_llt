@@ -21,7 +21,7 @@ bool index_exists(pRow_t r, Index_t icol)
 }
 
 static inline
-bool dot(Scalar_t & ans, pRow_t a, pRow_t b, Index_t bsz) // no semiring
+bool dot(Scalar_t & ans, pRow_t a, pRow_t b, Index_t bsz)
 {
     bool result = false;
     Row_t::iterator ait = a->begin();
@@ -39,7 +39,8 @@ bool dot(Scalar_t & ans, pRow_t a, pRow_t b, Index_t bsz) // no semiring
             ans += std::get<1>(*ait) * std::get<1>(*bit);
             result = true;
             ++ait;
-            ++bit; ++bctr;
+            ++bit;
+            ++bctr;
         }
         else if (a_idx < b_idx)
         {
@@ -100,7 +101,8 @@ void row_kernel(Index_t irow,
 }
 
 static inline
-void multi_row_kernel(Index_t t,
+void multi_row_kernel(Index_t nl_id,
+                      Index_t t,
                       Index_t nrow,
                       prMatrix_t C,
                       prMatrix_t const M,
@@ -111,7 +113,7 @@ void multi_row_kernel(Index_t t,
     for (Index_t j = t*nrow; j < (t+1)*nrow; ++j)
     {
         // absolute row index
-        Index_t irow = nr_inv(NODE_ID(), j);
+        Index_t irow = nr_inv(nl_id, j);
         row_kernel(irow, C, M, A, B, S);
     }
 
@@ -119,6 +121,7 @@ void multi_row_kernel(Index_t t,
 
 static inline
 void ABT_Mask_NoAccum_kernel(
+    Index_t nl_id,              // nodelet_id
     prMatrix_t C,               // output matrix
     prMatrix_t const M,         // mask matrix
     // SemiringT,               // semiring
@@ -140,7 +143,8 @@ void ABT_Mask_NoAccum_kernel(
     {
         for (Index_t t = 0; t < threads_per_nodelet; ++t)
         {
-            cilk_spawn multi_row_kernel(t, nrows_per_thread, C, M, A, B, S);
+            cilk_spawn multi_row_kernel(nl_id, t, nrows_per_thread,
+                                        C, M, A, B, S);
         }
         cilk_sync;
     }
@@ -153,7 +157,7 @@ void ABT_Mask_NoAccum_kernel(
         for (Index_t t = 0; t < nremainder_rows; ++t)
         {
             // absolute row index
-            Index_t irow = nr_inv(NODE_ID(), t + offset);
+            Index_t irow = nr_inv(nl_id, t + offset);
             cilk_spawn row_kernel(irow, C, M, A, B, S);
         }
         cilk_sync;
