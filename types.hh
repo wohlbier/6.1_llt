@@ -70,7 +70,8 @@ public:
     rMatrix_t(rMatrix_t &&) = delete;
     rMatrix_t & operator=(rMatrix_t &&) = delete;
 
-    void build(IndexArray_t::iterator i_it,
+    void build(Index_t nl_id,
+               IndexArray_t::iterator i_it,
                IndexArray_t::iterator j_it,
                IndexArray_t::iterator v_it,
                Index_t nedges)
@@ -85,7 +86,7 @@ public:
         max_degree_ = 0;
         for (Index_t row_idx = 0; row_idx < nrows_per_nodelet_; ++row_idx)
         {
-            Index_t irow = nr_inv(NODE_ID(), row_idx); // absolute row index
+            Index_t irow = nr_inv(nl_id, row_idx); // absolute row index
             pRow_t r = getrow(irow);
             Index_t deg = r->size();
             max_degree_ = (deg > max_degree_) ? deg : max_degree_;

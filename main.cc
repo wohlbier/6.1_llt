@@ -9,15 +9,15 @@ extern "C" {
 #include "algebra.hh"
 #include "types.hh"
 
-void initialize(Index_t nodelet_id, std::string const & filename, prMatrix_t M,
+void initialize(Index_t nl_id, std::string const & filename, prMatrix_t M,
                 Index_t const nnodes, Index_t const nedges)
 {
     Index_t tmp;
     FILE *infile = mw_fopen(filename.c_str(), "r", &tmp);
     mw_fread(&tmp, sizeof(Index_t), 1, infile);
-    //assert(tmp == nnodes);
+    assert(tmp == nnodes); // needed with 19.09
     mw_fread(&tmp, sizeof(Index_t), 1, infile);
-    //assert(tmp == nedges);
+    assert(tmp == nedges); // needed with 19.09
 
     // thread local storage to read into
     IndexArray_t iL(nedges);
@@ -37,7 +37,7 @@ void initialize(Index_t nodelet_id, std::string const & filename, prMatrix_t M,
     {
         Index_t i = iL[e];
         Index_t j = jL[e];
-        if (n_map(i) == nodelet_id)
+        if (n_map(i) == nl_id)
         {
             iL_nl.push_back(i);
             jL_nl.push_back(j);
@@ -47,7 +47,7 @@ void initialize(Index_t nodelet_id, std::string const & filename, prMatrix_t M,
 
     // build matrix
     IndexArray_t v_nl(iL_nl.size(), 1);
-    M->build(iL_nl.begin(), jL_nl.begin(), v_nl.begin(), nedges_nl);
+    M->build(nl_id, iL_nl.begin(), jL_nl.begin(), v_nl.begin(), nedges_nl);
 }
 
 int main(int argc, char* argv[])
@@ -58,10 +58,6 @@ int main(int argc, char* argv[])
         std::cerr << "Usage: ./llt input.bin" << std::endl;
         exit(1);
     }
-
-//#ifdef __PROFILE__
-//    hooks_region_begin("6.1_llt");
-//#endif
 
     Index_t nnodes, nedges;
     std::string filename = std::string(argv[1]);
@@ -107,7 +103,7 @@ int main(int argc, char* argv[])
     for (Index_t i = 0; i < NODELETS(); ++i)
     {
         cilk_migrate_hint(L->row_addr(i));
-        cilk_spawn ABT_Mask_NoAccum_kernel(C, L, L, L, S);
+        cilk_spawn ABT_Mask_NoAccum_kernel(i, C, L, L, L, S);
     }
     cilk_sync;
 
