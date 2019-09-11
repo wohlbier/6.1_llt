@@ -62,6 +62,7 @@ void row_kernel(Index_t irow,
     // return for empty row of A
     if (!A->getrow(irow)) return;
 
+    std::tuple<Index_t, Scalar_t> tmp;
     // loop over columns
     for (Index_t icol = 0; icol < A->nrows(); ++icol)
     {
@@ -72,7 +73,6 @@ void row_kernel(Index_t irow,
 
         // compute the dot
         Scalar_t ans;
-        std::tuple<Index_t, Scalar_t> tmp;
         if (dot(ans, A->getrow(irow), B->getrow(icol)))
         {
             std::get<0>(tmp) = icol;
