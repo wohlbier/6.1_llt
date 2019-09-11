@@ -9,23 +9,25 @@ extern "C" {
 #include "algebra.hh"
 #include "types.hh"
 
-void initialize(Index_t nodelet_id, std::string const & filename, prMatrix_t M,
+void initialize(Index_t nl_id, std::string const & filename, prMatrix_t M,
                 Index_t const nnodes, Index_t const nedges)
 {
     Index_t tmp;
     FILE *infile = mw_fopen(filename.c_str(), "r", &tmp);
     mw_fread(&tmp, sizeof(Index_t), 1, infile);
-    //assert(tmp == nnodes);
+    //assert(tmp == nnodes); // needed with 19.09
     mw_fread(&tmp, sizeof(Index_t), 1, infile);
-    //assert(tmp == nedges);
+    //assert(tmp == nedges); // needed with 19.09
 
     // thread local storage to read into
     IndexArray_t iL(nedges);
     IndexArray_t jL(nedges);
     mw_fread(reinterpret_cast<void *>(iL.data()),
-             sizeof(Index_t), iL.size(), infile);
+             //sizeof(Index_t), iL.size(), infile);
+             1, sizeof(Index_t)*iL.size(), infile); // bug work around
     mw_fread(reinterpret_cast<void *>(jL.data()),
-             sizeof(Index_t), jL.size(), infile);
+             //sizeof(Index_t), jL.size(), infile);
+             1, sizeof(Index_t) * jL.size(), infile); // bug work around
     mw_fclose(infile);
 
     // remove edges where i is a row not owned by this nodelet.
@@ -37,7 +39,8 @@ void initialize(Index_t nodelet_id, std::string const & filename, prMatrix_t M,
     {
         Index_t i = iL[e];
         Index_t j = jL[e];
-        if (n_map(i) == nodelet_id)
+
+        if (n_map(i) == nl_id)
         {
             iL_nl.push_back(i);
             jL_nl.push_back(j);
@@ -47,7 +50,7 @@ void initialize(Index_t nodelet_id, std::string const & filename, prMatrix_t M,
 
     // build matrix
     IndexArray_t v_nl(iL_nl.size(), 1);
-    M->build(iL_nl.begin(), jL_nl.begin(), v_nl.begin(), nedges_nl);
+    M->build(nl_id, iL_nl.begin(), jL_nl.begin(), v_nl.begin(), nedges_nl);
 }
 
 void resize(prMatrix_t M, Index_t sz)
@@ -93,9 +96,8 @@ int main(int argc, char* argv[])
     {
         cilk_migrate_hint(L->row_addr(i));
         cilk_spawn initialize(i, filename, L, nnodes, nedges);
-        cilk_sync; // serialize to get it to work
     }
-    //cilk_sync;
+    cilk_sync;
     L->set_max_degree();
 
     std::cerr << "Initialization complete." << std::endl;
@@ -123,7 +125,7 @@ int main(int argc, char* argv[])
     for (Index_t i = 0; i < NODELETS(); ++i)
     {
         cilk_migrate_hint(L->row_addr(i));
-        cilk_spawn ABT_Mask_NoAccum_kernel(C, L, L, L, S);
+        cilk_spawn ABT_Mask_NoAccum_kernel(i, C, L, L, L, S);
     }
     cilk_sync;
 
