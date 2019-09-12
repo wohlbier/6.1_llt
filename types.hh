@@ -17,7 +17,7 @@
 #include <vector>
 
 #include <cilk.h>
-#include <reducer.h>
+#include <memoryweb.h>
 
 typedef long Index_t;
 typedef long Scalar_t;
