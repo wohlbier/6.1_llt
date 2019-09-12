@@ -94,7 +94,6 @@ void row_kernel(Index_t irow,
 
         // compute the dot
         Scalar_t ans;
-        std::tuple<Index_t, Scalar_t> tmp;
         if (dot(ans, A->getrow(irow), s, bsz))
         {
             std::get<0>(tmp) = icol;

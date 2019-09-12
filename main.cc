@@ -53,11 +53,11 @@ void initialize(Index_t nl_id, std::string const & filename, prMatrix_t M,
     M->build(nl_id, iL_nl.begin(), jL_nl.begin(), v_nl.begin(), nedges_nl);
 }
 
-void resize(prMatrix_t M, Index_t sz)
+void resize(Index_t nl_id, prMatrix_t M, Index_t sz)
 {
     for (Index_t i = 0; i < M->nrows_nl(); i++)
     {
-        Index_t irow = nr_inv(NODE_ID(), i);
+        Index_t irow = nr_inv(nl_id, i);
         pRow_t r = M->getrow(irow);
         r->resize(sz);
     }
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
     for (Index_t i = 0; i < NODELETS(); ++i)
     {
         cilk_migrate_hint(S->row_addr(i));
-        cilk_spawn resize(S, L->max_degree());
+        cilk_spawn resize(i, S, L->max_degree());
     }
     cilk_sync;
 
