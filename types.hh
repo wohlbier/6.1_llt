@@ -13,6 +13,8 @@
 #define THREADS_PER_NODELET \
     THREAD_OVERSUBSCRIBE * THREADS_PER_GC * GC_PER_NODELET
 
+#include "local_arena_allocator.h"
+
 #include <tuple>
 #include <vector>
 
@@ -22,7 +24,13 @@
 typedef long Index_t;
 typedef long Scalar_t;
 typedef std::vector<Index_t> IndexArray_t;
-typedef std::vector<std::tuple<Index_t, Scalar_t>> Row_t;
+typedef std::tuple<Index_t, Scalar_t> Pair_t;
+#if 1
+typedef std::vector<Pair_t> Row_t;
+#else
+typedef std::vector<Pair_t, emu::local_arena_allocator<Pair_t>> Row_t;
+#endif
+
 typedef Row_t * pRow_t;
 typedef pRow_t * ppRow_t;
 
