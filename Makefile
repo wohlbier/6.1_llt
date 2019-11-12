@@ -1,4 +1,4 @@
-HDRS = algebra.hh types.hh local_arena_allocator.h
+HDRS = local_arena_allocator.h
 SRCS = main.cc arena.cc
 EMU_OBJS = $(subst .cc,.emu.o,$(SRCS))
 
